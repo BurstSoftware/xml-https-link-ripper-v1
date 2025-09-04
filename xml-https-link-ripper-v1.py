@@ -8,38 +8,33 @@ st.title("XML URL Extractor")
 # Text area for user to paste XML data
 xml_input = st.text_area("Paste your XML dataset here:", height=200)
 
-# Function to parse XML and extract URL
+# Function to parse XML and extract all URLs
 def parse_xml(xml_data):
     try:
         # Parse the XML string
         root = ET.fromstring(xml_data)
-        # Find the <loc> tag
-        for url in root.findall(".//loc"):
-            return url.text
-        return None
+        # Find all <loc> tags and extract their text
+        urls = [url.text for url in root.findall(".//loc") if url.text]
+        return urls
     except ET.ParseError:
         st.error("Invalid XML format. Please check your input.")
-        return None
+        return []
 
 # Process the input when the user submits
-if st.button("Extract URL"):
+if st.button("Extract URLs"):
     if xml_input:
-        extracted_url = parse_xml(xml_input)
-        if extracted_url:
-            # Create a DataFrame with the extracted URL and browse-categories page
+        extracted_urls = parse_xml(xml_input)
+        if extracted_urls:
+            # Create a DataFrame with all extracted URLs
             data = {
-                "Page Type": ["Main URL", "Browse Categories"],
-                "URL": [
-                    f'<a href="{extracted_url}" target="_blank">{extracted_url}</a>',
-                    f'<a href="{extracted_url}browse-categories/" target="_blank">{extracted_url}browse-categories/</a>'
-                ]
+                "Page URL": [f'<a href="{url}" target="_blank">{url}</a>' for url in extracted_urls]
             }
             df = pd.DataFrame(data)
             
             # Display the table with clickable links
             st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
         else:
-            st.warning("No URL found in the provided XML.")
+            st.warning("No URLs found in the provided XML.")
     else:
         st.warning("Please paste an XML dataset to process.")
 
